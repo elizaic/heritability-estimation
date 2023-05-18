@@ -148,11 +148,11 @@ levels(days_boot_sum_both$var_comp) <- c('V[Phenotypic]', 'V[Additive]', 'h^2', 
 Vars <- ggplot(data = days_boot_sum_both %>% filter(var_comp != 'h^2' & var_comp != 'I[A]'), aes(x = treatment, y = mean)) +
   geom_linerange(aes(ymax = mean + sd, ymin = mean - sd),
                  size = 1, lty = 'solid') +
-  geom_point(data = days_res_comb %>% filter(var_comp != 'h^2' & var_comp != 'I[A]'), aes(x = treatment, y = est, fill = treatment), size = 3, shape = 21) +
+  geom_point(data = days_res_comb %>% filter(var_comp != 'h^2' & var_comp != 'I[A]'), aes(x = treatment, y = est, shape = treatment), size = 3, fill = 'white') +
   facet_wrap( ~ var_comp, labeller = label_parsed, scales = "fixed") +
   labs(y = "Variance of\ndays until diapause", x = "Environment") +
-  scale_x_discrete(labels = c('long' = "Home", 'short' = "Away"))+
-  scale_fill_manual(labels = c('long' = "Home", 'short' = "Away"), values = c('long' = 'black', 'short' = 'white')) +
+  scale_x_discrete(labels = c('long' = "North\n(Home)", 'short' = "South\n(Away)"))+
+  scale_shape_manual(labels = c('long' = "Home", 'short' = "Away"), values = c('long' = 21, 'short' = 22)) +
   theme_bw() +
   theme(text = element_text(size = 18), #axis.ticks.x = element_blank(),
         strip.placement = "outside", strip.background = element_blank(),
@@ -164,11 +164,11 @@ Vars
 Herit <- ggplot(data = days_boot_sum_both %>% filter(var_comp == 'h^2'), aes(x = treatment, y = mean)) +
   geom_linerange(aes(ymax = mean + sd, ymin = mean - sd),
                  size = 1, lty = 'solid') +
-  geom_point(data = days_res_comb %>% filter(var_comp == 'h^2'), aes(x = treatment, y = est, fill = treatment), size = 3, shape = 21) +
+  geom_point(data = days_res_comb %>% filter(var_comp == 'h^2'), aes(x = treatment, y = est, shape = treatment), size = 3, fill = 'white') +
   facet_wrap( ~ var_comp, labeller = label_parsed, scales = "fixed") +
   labs(y = "Heritability of\ndays until diapause", x = "Environment") +
-  scale_x_discrete(labels = c('long' = "Home", 'short' = "Away")) +
-  scale_fill_manual(values = c('long' = 'black', 'short' = 'white')) +
+  scale_x_discrete(labels = c('long' = "North\n(Home)", 'short' = "South\n(Away)")) +
+  scale_shape_manual(values = c('long' = 21, 'short' = 22)) +
   scale_y_continuous(breaks = c(0,0.5,1), limits = c(-0.05, 1.14)) +
   theme_bw() +
   theme(text = element_text(size = 18), #axis.ticks.x = element_blank(),
@@ -181,11 +181,11 @@ Herit
 Evolv <- ggplot(data = days_boot_sum_both %>% filter(var_comp == 'I[A]'), aes(x = treatment, y = mean)) +
   geom_linerange(aes(ymax = mean + sd, ymin = mean - sd),
                  size = 1, lty = 'solid') +
-  geom_point(data = days_res_comb %>% filter(var_comp == 'I[A]'), aes(x = treatment, y = est, fill = treatment), size = 3, shape = 21) +
+  geom_point(data = days_res_comb %>% filter(var_comp == 'I[A]'), aes(x = treatment, y = est, shape = treatment), size = 3, fill = 'white') +
   facet_wrap( ~ var_comp, labeller = label_parsed, scales = "fixed") +
   labs(y = "Evolvability of\ndays until diapause", x = "Environment") +
-  scale_x_discrete(labels = c('long' = "Home", 'short' = "Away")) +
-  scale_fill_manual(values = c('long' = 'black', 'short' = 'white')) +
+  scale_x_discrete(labels = c('long' = "North\n(Home)", 'short' = "South\n(Away)")) +
+  scale_shape_manual(values = c('long' = 21, 'short' = 22)) +
   scale_y_continuous(breaks = c(0,0.5,1), limits = c(-0.05, 1.14)) +
   theme_bw() +
   theme(text = element_text(size = 18), #axis.ticks.x = element_blank(),
@@ -195,8 +195,8 @@ Evolv <- ggplot(data = days_boot_sum_both %>% filter(var_comp == 'I[A]'), aes(x 
         legend.position = 'none')
 Evolv
 
-ggarrange(Vars, Herit, Evolv, ncol = 3, widths = c(1, 0.5, 0.5), labels = 'AUTO')
-##Export: 
+ggarrange(Vars, Herit, Evolv, ncol = 3, widths = c(.8, 0.5, 0.5), labels = 'AUTO')
+##Export: 900 x 450 px (9.375 x 4.69 in)
 
 ### Results for plot - OLD
 # long.res <- as.data.frame(VarCorr(mixedLong1))
@@ -238,13 +238,13 @@ str(resim_long)
 varAmongFams <- ggplot(data = resim_long, aes(x = groupID2, y = addIntercept)) +
   # geom_point(aes(fill = treat), size = 3, shape = 21) +  #For means, without sd
   # geom_point(data = resim_short, aes(x = groupID, y = addIntercept, fill = treat), size = 3, shape = 21) +
-  geom_pointrange(aes(ymin = addIntercept - sd, ymax = addIntercept + sd, fill = treat), #For means with sd
-                  fatten = 2, size = 1, shape = 21) +
-  geom_pointrange(data = resim_short, aes(x = groupID, ymin = addIntercept - sd, ymax = addIntercept + sd, fill = treat),
-                  fatten = 2, size = 1, shape = 21) +
+  geom_pointrange(aes(ymin = addIntercept - sd, ymax = addIntercept + sd, shape = treat), #For means with sd
+                  fatten = 2, size = 1, fill = 'white') + #shape = 21) +
+  geom_pointrange(data = resim_short, aes(x = groupID, ymin = addIntercept - sd, ymax = addIntercept + sd, shape = treat),
+                  fatten = 2, size = 1, fill = 'white') + #, shape = 21) +
   lims(y = c(0,31)) +
-  labs(x = "Rank order of families", y = "Days until diapause", fill = "Environment") +
-  scale_fill_manual(labels = c('long' = "Home", 'short' = "Away"), values = c('long' = 'black', 'short' = 'white')) +
+  labs(x = "Rank order of families", y = "Days until diapause", shape = "Environment") +
+  scale_shape_manual(labels = c('long' = "North fall (home)", 'short' = "South fall (away)"), values = c(21, 22))+# c('long' = , 'short' = '2')) +
   theme_classic() +
   theme(text = element_text(size = 18), axis.ticks.x = element_blank(),
         axis.text.x=element_blank(),
@@ -252,7 +252,7 @@ varAmongFams <- ggplot(data = resim_long, aes(x = groupID2, y = addIntercept)) +
         panel.grid.minor = element_blank(),
         legend.position = 'right')
 varAmongFams
-##Export: 700 x 500 px (7.21 x 5.2 in)
+##Export: 700 x 400 px (7.21 x 4.17 in)
 
 # ggarrange(Vars, Herit, Evolv, varAmongFams, ncol = 4, widths = c(1, 0.5, 0.5, 1), labels = 'AUTO')
 
