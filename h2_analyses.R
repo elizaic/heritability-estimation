@@ -30,6 +30,12 @@ y.n %>% group_by(Treatment, Sire) %>% summarise(
     mean = mean(noff)
   )
 
+y.n %>% group_by(Treatment) %>% summarise(
+  noff = n()) # sample size
+
+y.n %>% group_by(Sire, Dam) %>% summarise(
+  noff = n()) #sample size of full-sib families
+
 short <- y.n %>% # create dataset for short treatment
   filter(Treatment == "S" & is.na(dead) == TRUE) # filter out dead beetles 
 hist(short$time, breaks = 50)
@@ -146,7 +152,11 @@ days_boot_sum_both$var_comp <- factor(days_boot_sum_both$var_comp, levels = c('V
 levels(days_boot_sum_both$var_comp) <- c('V[Phenotypic]', 'V[Additive]', 'h^2', 'I[A]') #change labels for VA and VP
 
 Vars <- ggplot(data = days_boot_sum_both %>% filter(var_comp != 'h^2' & var_comp != 'I[A]'), aes(x = treatment, y = mean)) +
-  geom_linerange(aes(ymax = mean + sd, ymin = mean - sd),
+  #sd error bars
+  # geom_linerange(aes(ymax = mean + sd, ymin = mean - sd),
+  #                size = 1, lty = 'solid') +
+  #conf int error bars
+  geom_linerange(aes(ymax = CI.high, ymin = CI.low),
                  size = 1, lty = 'solid') +
   geom_point(data = days_res_comb %>% filter(var_comp != 'h^2' & var_comp != 'I[A]'), aes(x = treatment, y = est, shape = treatment), size = 3, fill = 'white') +
   facet_wrap( ~ var_comp, labeller = label_parsed, scales = "fixed") +
@@ -162,14 +172,21 @@ Vars <- ggplot(data = days_boot_sum_both %>% filter(var_comp != 'h^2' & var_comp
 Vars
 
 Herit <- ggplot(data = days_boot_sum_both %>% filter(var_comp == 'h^2'), aes(x = treatment, y = mean)) +
-  geom_linerange(aes(ymax = mean + sd, ymin = mean - sd),
+  #sd error bars
+  # geom_linerange(aes(ymax = mean + sd, ymin = mean - sd),
+  #                size = 1, lty = 'solid') +
+  # scale_y_continuous(breaks = c(0,0.5,1), limits = c(-0.05, 1.14)) +
+  #conf int error bars
+  geom_linerange(aes(ymax = CI.high, ymin = CI.low),
                  size = 1, lty = 'solid') +
+  scale_y_continuous(breaks = c(0,0.5,1), limits = c(-0.05, 1.42)) +
+  #h2 means
   geom_point(data = days_res_comb %>% filter(var_comp == 'h^2'), aes(x = treatment, y = est, shape = treatment), size = 3, fill = 'white') +
+  #formatting
   facet_wrap( ~ var_comp, labeller = label_parsed, scales = "fixed") +
   labs(y = "Heritability of\ndays until diapause", x = "Environment") +
   scale_x_discrete(labels = c('long' = "North\n(Home)", 'short' = "South\n(Away)")) +
   scale_shape_manual(values = c('long' = 21, 'short' = 22)) +
-  scale_y_continuous(breaks = c(0,0.5,1), limits = c(-0.05, 1.14)) +
   theme_bw() +
   theme(text = element_text(size = 18), #axis.ticks.x = element_blank(),
         strip.placement = "outside", strip.background = element_blank(),
@@ -179,7 +196,11 @@ Herit <- ggplot(data = days_boot_sum_both %>% filter(var_comp == 'h^2'), aes(x =
 Herit
 
 Evolv <- ggplot(data = days_boot_sum_both %>% filter(var_comp == 'I[A]'), aes(x = treatment, y = mean)) +
-  geom_linerange(aes(ymax = mean + sd, ymin = mean - sd),
+  #sd error bars
+  # geom_linerange(aes(ymax = mean + sd, ymin = mean - sd),
+  #                size = 1, lty = 'solid') +
+  #conf int error bars
+  geom_linerange(aes(ymax = CI.high, ymin = CI.low),
                  size = 1, lty = 'solid') +
   geom_point(data = days_res_comb %>% filter(var_comp == 'I[A]'), aes(x = treatment, y = est, shape = treatment), size = 3, fill = 'white') +
   facet_wrap( ~ var_comp, labeller = label_parsed, scales = "fixed") +
@@ -225,24 +246,46 @@ ggarrange(Vars, Herit, Evolv, ncol = 3, widths = c(.8, 0.5, 0.5), labels = 'AUTO
 ### Plot of variation among families ----
 
 resim_short <- REsim(mixedShort1) %>% mutate(treat = 'short') %>% #short dataset
-  mutate(addIntercept = mean + fixef(mixedShort1))
+  mutate(addIntercept = mean + fixef(mixedShort1)) %>%
+  mutate(conf = sd * qnorm(1-((1-0.95)/2)))
+
 resim_long <- REsim(mixedLong1) %>% mutate(treat = 'long') %>% #long dataset
   mutate(addIntercept = mean + fixef(mixedLong1)) %>% 
   arrange(addIntercept) %>%
-  mutate(groupID2 = factor(groupID, levels = groupID)) 
+  mutate(groupID2 = factor(groupID, levels = groupID)) %>%
+  mutate(conf = sd * qnorm(1-((1-0.95)/2)))
+plotREsim(resim_long, stat = 'mean')
 str(resim_long)
 
 # plotREsim(REsim(mixedLong1))
 # plotREsim(REsim(mixedShort1))
 
+long.plot <- long %>% arrange(match(Sire, resim_long$groupID))
+long.plot <- long.plot %>% mutate(Sire2 = factor(Sire, levels = resim_long$groupID))
+
+short.plot <- short %>% arrange(match(Sire, resim_long$groupID))
+short.plot <- short.plot %>% mutate(Sire2 = factor(Sire, levels = resim_long$groupID))
+
+
 varAmongFams <- ggplot(data = resim_long, aes(x = groupID2, y = addIntercept)) +
   # geom_point(aes(fill = treat), size = 3, shape = 21) +  #For means, without sd
-  # geom_point(data = resim_short, aes(x = groupID, y = addIntercept, fill = treat), size = 3, shape = 21) +
-  geom_pointrange(aes(ymin = addIntercept - sd, ymax = addIntercept + sd, shape = treat), #For means with sd
-                  fatten = 2, size = 1, fill = 'white') + #shape = 21) +
-  geom_pointrange(data = resim_short, aes(x = groupID, ymin = addIntercept - sd, ymax = addIntercept + sd, shape = treat),
-                  fatten = 2, size = 1, fill = 'white') + #, shape = 21) +
-  lims(y = c(0,31)) +
+  #add background points
+  geom_point(data = long.plot, aes(x = Sire2, y = time), position = position_jitter(width = 0.15), size = 1, shape = 16, alpha = 0.25) +
+  geom_point(data = short.plot, aes(x = Sire2, y = time), position = position_jitter(width = 0.15), size = 1, shape = 15, alpha = 0.75) +
+  
+  #add family means and error bars
+  # geom_pointrange(aes(ymin = addIntercept - sd, ymax = addIntercept + sd, shape = treat), #For means with sd
+  #                 fatten = 2, size = 1, fill = 'white') + #shape = 21) +
+  # geom_pointrange(data = resim_short, aes(x = groupID, ymin = addIntercept - sd, ymax = addIntercept + sd, shape = treat),
+                  # fatten = 2, size = 1, fill = 'white') + #, shape = 21) +
+  
+  #means with CI
+  geom_pointrange(aes(x = groupID2, ymin = addIntercept - conf, ymax = addIntercept + conf, shape = treat), #For means with CI
+                  fatten = 4, size = 0.5, fill = 'white', position = position_nudge(x = -0.2)) + #shape = 21) +
+  geom_pointrange(data = resim_short, aes(x = groupID, ymin = addIntercept - conf, ymax = addIntercept + conf, shape = treat),
+                  fatten = 4, size = 0.5, fill = 'white', position = position_nudge(x = 0.2)) + #, shape = 21) +
+  #formatting
+  # lims(y = c(0,31)) +
   labs(x = "Rank order of families", y = "Days until diapause", shape = "Environment") +
   scale_shape_manual(labels = c('long' = "North fall (home)", 'short' = "South fall (away)"), values = c(21, 22))+# c('long' = , 'short' = '2')) +
   theme_classic() +
@@ -317,6 +360,13 @@ weight_data %>% group_by(sire,dam) %>% summarise(
     nSire = n(),
     mean = mean(noff)
   )
+
+weight_data %>% summarise(
+  noff = n()) 
+
+
+weight_data %>% group_by(dam, sire) %>% summarise(
+  noff = n()) #sample size of full-sib families
 
 heritability.fs(weight_data$weight, weight_data$sire, weight_data$dam)
 
@@ -490,6 +540,9 @@ width_data %>% group_by(sire,dam) %>% summarise(
     nDam = n(),
     mean = mean(noff)
   ) %>% View()
+
+width_data %>% summarise(
+  noff = n())
 
 heritability.fs(width_data$th_width, width_data$sire, width_data$dam)
 
